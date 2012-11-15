@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 
@@ -7,8 +9,10 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
 {
     public class Profile
     {
-        // TODO
-        // ok, here's a problem, here the PK consists of PropertyName and UserId, what should i do here?
+        [Key]
+        //[ForeignKey("UserId")]
+        public Guid UserId { get; set; }
+        [Key]
         public string PropertyName { get; set; }
         public string PropertyValueStrings { get; set; }
         public byte[] PropertyValueBinary { get; set; }

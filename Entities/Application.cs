@@ -15,5 +15,9 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
         public string Name { get; set; }
         [MaxLength(200)]
         public string Description { get; set; }
+
+        public virtual ICollection<Role> Roles { get; set; }
+        public virtual ICollection<User> Users { get; set; }
+        public virtual ICollection<Function> Functions { get; set; }
     }
 }

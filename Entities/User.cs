@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 
@@ -11,7 +12,7 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
     public class User
     {
         [Key]
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
         [Required]
         [MaxLength(50)]
         public string Name { get; set; }
@@ -41,7 +42,8 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
 
         [MaxLength(256)]
         public string Comment { get; set; }
-
         public virtual Application Application { get; set; }
+        public virtual ICollection<Role> Roles { get; set; }
+        public virtual ICollection<Profile> Profiles { get; set; }
     }
 }
