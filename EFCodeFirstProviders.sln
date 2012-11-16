@@ -5,12 +5,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entities", "Entities\Entiti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomainTest", "DomainTest\DomainTest.csproj", "{C376E355-EC4C-4B24-9053-22488B88CFB1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Providers", "Providers\Providers.csproj", "{608274C4-E451-4CAC-98B2-07C18BB77790}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{608274C4-E451-4CAC-98B2-07C18BB77790}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{608274C4-E451-4CAC-98B2-07C18BB77790}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{608274C4-E451-4CAC-98B2-07C18BB77790}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{608274C4-E451-4CAC-98B2-07C18BB77790}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A4E211C5-C4B7-4AA2-A584-AF1CC999A692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A4E211C5-C4B7-4AA2-A584-AF1CC999A692}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4E211C5-C4B7-4AA2-A584-AF1CC999A692}.Release|Any CPU.ActiveCfg = Release|Any CPU
