@@ -61,6 +61,42 @@ namespace ScottyApps.EFCodeFirstProviders.Providers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Can NOT retrieve a Hashed password..
+        /// </summary>
+        internal static string msg_CannotRetrieveHashedPwd {
+            get {
+                return ResourceManager.GetString("msg_CannotRetrieveHashedPwd", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password retrieval NOT enabled..
+        /// </summary>
+        internal static string msg_PwdRetrivalNotEnabled {
+            get {
+                return ResourceManager.GetString("msg_PwdRetrivalNotEnabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User {0} is locked out..
+        /// </summary>
+        internal static string msg_UserLockedOut {
+            get {
+                return ResourceManager.GetString("msg_UserLockedOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User {0} is NOT confirmed yet..
+        /// </summary>
+        internal static string msg_UserNotConfirmed {
+            get {
+                return ResourceManager.GetString("msg_UserNotConfirmed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User with Name {0} does NOT exist..
         /// </summary>
         internal static string msg_UserNotExist {

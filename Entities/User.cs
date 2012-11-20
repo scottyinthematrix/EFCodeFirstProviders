@@ -18,7 +18,7 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
         public string Name { get; set; }
 
         public bool IsAnonymous { get; set; }
-        public DateTime LastActiveDate { get; set; }
+        public DateTime? LastActiveDate { get; set; }
 
         // NOTE below fields originally belongs to a separate entity: Membership
         [Required]
@@ -28,7 +28,7 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
         public string PasswordQuestion { get; set; }
         public string PasswordAnswer { get; set; }
         // this is used to be IsApproved
-        public bool IsConfired { get; set; }
+        public bool IsConfirmed { get; set; }
         public bool IsLockedOut { get; set; }
 
         public DateTime CreateDate { get; set; }

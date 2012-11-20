@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Configuration.Provider;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Configuration;
@@ -34,6 +35,13 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         }
 
         private int passwordAttemptWindow;
+
+        /// <summary>
+        /// Gets the number of minutes in which a maximum number of invalid password or password-answer attempts are allowed before the membership user is locked out.
+        /// </summary>
+        /// <returns>
+        /// The number of minutes in which a maximum number of invalid password or password-answer attempts are allowed before the membership user is locked out.
+        /// </returns>
         public override int PasswordAttemptWindow
         {
             get { return passwordAttemptWindow; }
@@ -80,14 +88,25 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         #endregion
 
         #region override methods
-
+        // TODO
+        // encryp according to the PasswordFormat
         private string EncryptPassword(string clearText)
         {
             throw new NotImplementedException();
         }
+        // TODO
+        // decrypt according to the PasswordFormat
         private string DecryptPassword(string password)
         {
-            throw new NotImplementedException();           
+            throw new NotImplementedException();
+        }
+        // TODO
+        private bool CheckPwdComplexity(string clearText)
+        {
+            // TODO
+            // Throw exception when password does not meet with the complexity
+            // check MinRequiredNonAlphanumericCharacters && MinRequiredPasswordLength
+            throw new NotImplementedException();
         }
 
         // NOTE currently nothing to do with these methods
@@ -172,16 +191,16 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             ConnectionString = connectionStringSettings.ConnectionString;
 
             // Get encryption and decryption key information from the configuration.
-            Configuration configuration = WebConfigurationManager.OpenWebConfiguration(HostingEnvironment.ApplicationVirtualPath);
-            machineKey = (MachineKeySection)configuration.GetSection("system.web/machineKey");
+            //Configuration configuration = WebConfigurationManager.OpenWebConfiguration(HostingEnvironment.ApplicationVirtualPath);
+            //machineKey = (MachineKeySection)configuration.GetSection("system.web/machineKey");
 
-            if (machineKey.ValidationKey.Contains("AutoGenerate"))
-            {
-                if (PasswordFormat != MembershipPasswordFormat.Clear)
-                {
-                    throw new ProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys.");
-                }
-            }
+            //if (machineKey.ValidationKey.Contains("AutoGenerate"))
+            //{
+            //    if (PasswordFormat != MembershipPasswordFormat.Clear)
+            //    {
+            //        throw new ProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys.");
+            //    }
+            //}
 
         }
 
@@ -212,53 +231,253 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             {
                 return false;
             }
+            if (!CheckPwdComplexity(newPassword))
+            {
+                return false;
+            }
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user =
+                    ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
+                user.Password = EncryptPassword(newPassword);
+                ctx.SaveChanges();
+            }
 
-
+            return true;
         }
 
         public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPasswordQuestion, string newPasswordAnswer)
         {
-            throw new NotImplementedException();
+            if (!ValidateUser(username, password))
+            {
+                return false;
+            }
+
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user =
+                    ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
+                user.PasswordQuestion = newPasswordQuestion;
+                user.PasswordAnswer = newPasswordAnswer;
+                ctx.SaveChanges();
+            }
+
+            return true;
         }
 
-        public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isApproved, object providerUserKey, out MembershipCreateStatus status)
+        public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isConfirmed, object providerUserKey, out MembershipCreateStatus status)
         {
-            throw new NotImplementedException();
+            status = MembershipCreateStatus.Success;
+
+            ValidatePasswordEventArgs args = new ValidatePasswordEventArgs(username, password, true);
+            OnValidatingPassword(args);
+
+            if (!CheckPwdComplexity(password))
+            {
+                status = MembershipCreateStatus.InvalidPassword;
+                return null;
+            }
+
+            MembershipUser membershipUser = null;
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user = null;
+                // check username uniqueness
+                user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                if (user != null)
+                {
+                    status = MembershipCreateStatus.DuplicateUserName;
+                    return null;
+                }
+
+                // check email uniqueness
+                if (RequiresUniqueEmail)
+                {
+                    user = GetUser(u => u.Email.ToLower() == email.ToLower(), ctx);
+                    if (user != null)
+                    {
+                        status = MembershipCreateStatus.DuplicateEmail;
+                        return null;
+                    }
+                }
+
+                user = new User
+                                {
+                                    Name = username,
+                                    Password = EncryptPassword(password),
+                                    Email = email,
+                                    CreateDate = DateTime.Now,
+                                    Application = ProviderUtils.EnsureApplication(ApplicationName, ctx),
+                                    Id = Guid.NewGuid(),
+                                    IsConfirmed = false,  // this should always be false
+                                    PasswordAnswer = passwordAnswer,
+                                    PasswordQuestion = passwordQuestion
+                                };
+                ctx.Users.Add(user);
+                ctx.SaveChanges();
+
+                membershipUser = GetMembershipUserFromUser(user);
+            }
+
+            return membershipUser;
         }
 
         public override bool DeleteUser(string username, bool deleteAllRelatedData)
         {
-            throw new NotImplementedException();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                if (user == null)
+                {
+                    return false;
+                }
+
+                // TODO delete related data : UsersInRoles, Profiles
+            }
+
+            return true;
         }
 
         public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
-            throw new NotImplementedException();
+            MembershipUserCollection membershipUsers = new MembershipUserCollection();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var query = ctx.Users.Where(MatchApplication());
+                if (!string.IsNullOrEmpty(emailToMatch.Trim()))
+                {
+                    query = query.Where(u => u.Email.ToLower().Contains(emailToMatch.ToLower()));
+                }
+                totalRecords = query.Count();
+
+                if (totalRecords > 0)
+                {
+                    query.Skip(pageIndex * pageSize).Take(pageSize).ToList().ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
+                }
+            }
+
+            return membershipUsers;
         }
 
         public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
-            throw new NotImplementedException();
+            MembershipUserCollection membershipUsers = new MembershipUserCollection();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var query = ctx.Users.Where(MatchApplication());
+                if (!string.IsNullOrEmpty(usernameToMatch.Trim()))
+                {
+                    query = query.Where(u => u.Name.ToLower().Contains(usernameToMatch.ToLower()));
+                }
+                totalRecords = query.Count();
+
+                if (totalRecords > 0)
+                {
+                    query.Skip(pageIndex * pageSize).Take(pageSize).ToList().ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
+                }
+            }
+
+            return membershipUsers;
         }
 
         public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
         {
-            throw new NotImplementedException();
+            MembershipUserCollection membershipUsers = new MembershipUserCollection();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var query = ctx.Users.Where(MatchApplication());
+                totalRecords = query.Count();
+
+                if (totalRecords > 0)
+                {
+                    query
+                        .Skip(pageIndex * pageSize)
+                        .Take(pageSize)
+                        .ToList()
+                        .ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
+                }
+            }
+
+            return membershipUsers;
         }
 
         public override int GetNumberOfUsersOnline()
         {
-            throw new NotImplementedException();
+            TimeSpan onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
+            DateTime compareTime = DateTime.Now.Subtract(onlineSpan);
+
+            using (MembershipContext context = new MembershipContext())
+            {
+                return context.Users.Where(MatchApplication()).Count(u => u.LastActiveDate > compareTime);
+            }
         }
 
         public override string GetPassword(string username, string answer)
         {
-            throw new NotImplementedException();
+            if (!EnablePasswordRetrieval)
+            {
+                throw new ProviderException(Resource.msg_PwdRetrivalNotEnabled);
+            }
+
+            if (PasswordFormat == MembershipPasswordFormat.Hashed)
+            {
+                throw new ProviderException(Resource.msg_CannotRetrieveHashedPwd);
+            }
+
+            string pwd;
+
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                if (user == null)
+                {
+                    throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
+                }
+                if (!user.IsConfirmed)
+                {
+                    throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
+                }
+                if (user.IsLockedOut)
+                {
+                    throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
+                }
+
+                pwd = user.Password;
+                if (PasswordFormat == MembershipPasswordFormat.Encrypted)
+                {
+                    pwd = DecryptPassword(user.Password);
+                }
+            }
+
+            return pwd;
         }
 
+        /// <summary>
+        /// Gets information from the data source for a user. Provides an option to update the last-activity date/time stamp for the user.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.Web.Security.MembershipUser"/> object populated with the specified user's information from the data source.
+        /// </returns>
+        /// <param name="username">The name of the user to get information for. </param>
+        /// <param name="userIsOnline">true to update the last-activity date/time stamp for the user; false to return user information without updating the last-activity date/time stamp for the user. </param>
         public override MembershipUser GetUser(string username, bool userIsOnline)
         {
-            throw new NotImplementedException();
+            MembershipUser membershipUser = null;
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                if (user != null)
+                {
+                    membershipUser = GetMembershipUserFromUser(user);
+                    if (userIsOnline)
+                    {
+                        user.LastActiveDate = DateTime.Now;
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+
+            return membershipUser;
         }
 
         public override MembershipUser GetUser(object providerUserKey, bool userIsOnline)
@@ -294,14 +513,46 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 User user = ctx.Users.First(u => String.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
                 if (user == null)
                 {
-                    throw new Exception(string.Format(Resource.msg_UserNotExist, username));
+                    throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
+                }
+                if (!user.IsConfirmed)
+                {
+                    throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
+                }
+                if (!user.IsLockedOut)
+                {
+                    throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
                 }
 
                 string encryptedPwd = EncryptPassword(password);
                 if (encryptedPwd != user.Password)
                 {
-                    throw new Exception(string.Format(Resource.msg_WrongPassword, username));
+                    // update falure password attempt count
+                    DateTime? lastFailureTry = user.FailedPasswordAttempWindowStart;
+                    if (lastFailureTry == null || DateTime.Now > lastFailureTry.Value.AddMinutes(PasswordAttemptWindow))
+                    {
+                        user.FailedPasswordAttempWindowStart = DateTime.Now;
+                        user.FailedPasswordAttempCount = 1;
+                    }
+                    else
+                    {
+                        ++user.FailedPasswordAttempCount;
+                    }
+
+                    if (user.FailedPasswordAttempCount >= MaxInvalidPasswordAttempts)
+                    {
+                        user.IsLockedOut = true;
+                        user.LastLockoutDate = DateTime.Now;
+                    }
+                    ctx.SaveChanges();
+
+                    throw new EFMemberException(EFMembershipValidationStatus.WrongPassword, string.Format(Resource.msg_WrongPassword, username));
                 }
+
+                // update last date
+                user.LastActiveDate = DateTime.Now;
+                user.LastLoginDate = DateTime.Now;
+                ctx.SaveChanges();
             }
 
             return true;
@@ -310,6 +561,41 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         #endregion
 
         #region private methods
+
+        private MembershipUser GetMembershipUserFromUser(User user)
+        {
+            return new MembershipUser(
+                                      Name,
+                                      user.Name,
+                                      user.Id,
+                                      user.Email,
+                                      user.PasswordQuestion,
+                                      user.Comment,
+                                      user.IsConfirmed,
+                                      user.IsLockedOut,
+                                      user.CreateDate,
+                                      user.LastLoginDate.GetValueOrDefault(),
+                                      user.LastActiveDate.GetValueOrDefault(),
+                                      user.LastPasswordChangedDate.GetValueOrDefault(),
+                                      user.LastLockoutDate.GetValueOrDefault());
+        }
+
+        private User GetUser(Expression<Func<User, bool>> query, MembershipContext context)
+        {
+            User user = context.Users.Where(query).Where(MatchApplication()).First();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Matches the local application name.
+        /// </summary>
+        /// <returns>Status whether passed in user matches the application.</returns>
+        private Expression<Func<User, bool>> MatchApplication()
+        {
+            return user => user.Application.Name.ToLower() == ApplicationName.ToLower();
+        }
+
         #endregion
 
     }
