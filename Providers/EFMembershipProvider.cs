@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Configuration.Provider;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -88,28 +89,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         #endregion
 
         #region override methods
-        // TODO
-        // encryp according to the PasswordFormat
-        private string EncryptPassword(string clearText)
-        {
-            throw new NotImplementedException();
-        }
-        // TODO
-        // decrypt according to the PasswordFormat
-        private string DecryptPassword(string password)
-        {
-            throw new NotImplementedException();
-        }
-        // TODO
-        private bool CheckPwdComplexity(string clearText)
-        {
-            // TODO
-            // Throw exception when password does not meet with the complexity
-            // check MinRequiredNonAlphanumericCharacters && MinRequiredPasswordLength
-            throw new NotImplementedException();
-        }
 
-        // NOTE currently nothing to do with these methods
         public override void Initialize(string name, System.Collections.Specialized.NameValueCollection config)
         {
             // Initialize values from web.config.
@@ -202,21 +182,6 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             //    }
             //}
 
-        }
-
-        protected override byte[] DecryptPassword(byte[] encodedPassword)
-        {
-            return base.DecryptPassword(encodedPassword);
-        }
-
-        protected override byte[] EncryptPassword(byte[] password)
-        {
-            return base.EncryptPassword(password);
-        }
-
-        protected override byte[] EncryptPassword(byte[] password, System.Web.Configuration.MembershipPasswordCompatibilityMode legacyPasswordCompatibilityMode)
-        {
-            return base.EncryptPassword(password, legacyPasswordCompatibilityMode);
         }
 
         protected override void OnValidatingPassword(ValidatePasswordEventArgs e)
@@ -482,28 +447,121 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override MembershipUser GetUser(object providerUserKey, bool userIsOnline)
         {
-            throw new NotImplementedException();
+            Guid userId = (Guid)providerUserKey;
+            MembershipUser membershipUser = null;
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                User user = GetUser(u => u.Id == userId, ctx);
+                if (user != null)
+                {
+                    membershipUser = GetMembershipUserFromUser(user);
+                    if (userIsOnline)
+                    {
+                        user.LastActiveDate = DateTime.Now;
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+
+            return membershipUser;
         }
 
         public override string GetUserNameByEmail(string email)
         {
-            throw new NotImplementedException();
-        }
+            string userName = string.Empty;
 
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var user = ctx.Users.Where(MatchApplication()).Single(u => u.Email.ToLower() == email.ToLower());
+                if (user != null)
+                {
+                    userName = user.Name;
+                }
+            }
+
+            return userName;
+        }
 
         public override string ResetPassword(string username, string answer)
         {
-            throw new NotImplementedException();
+            if (!EnablePasswordReset)
+            {
+                throw new ProviderException(Resource.msg_PwdResetNotEnabled);
+            }
+
+            if (RequiresQuestionAndAnswer && string.IsNullOrEmpty(answer))
+            {
+                throw new ProviderException(Resource.msg_AnswerRequiredOnPwdReset);
+            }
+
+            string newPwd;
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                if (user == null)
+                {
+                    throw new ProviderException(string.Format(Resource.msg_UserNotExist, username));
+                }
+                if (user.IsLockedOut)
+                {
+                    throw new ProviderException(string.Format(Resource.msg_UserLockedOut, username));
+                }
+                if (string.Compare(user.PasswordAnswer, answer, StringComparison.OrdinalIgnoreCase) != 0)
+                {
+                    throw new ProviderException(string.Format(Resource.msg_AnswerNotMatched, username));
+                }
+
+                newPwd = Membership.GeneratePassword(MinRequiredPasswordLength,
+                                                              MinRequiredNonAlphanumericCharacters);
+                user.Password = EncryptPassword(newPwd);
+                user.LastPasswordChangedDate = DateTime.Now;
+                ctx.SaveChanges();
+            }
+
+            return newPwd;
         }
 
         public override bool UnlockUser(string userName)
         {
-            throw new NotImplementedException();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var user = GetUser(u => u.Name.ToLower() == userName.ToLower(), ctx);
+                if (user == null)
+                {
+                    throw new ProviderException(Resource.msg_UserNotExist);
+                }
+                user.IsLockedOut = false;
+                user.LastLockoutDate = DateTime.Now;
+                ctx.SaveChanges();
+            }
+            return true;
         }
 
-        public override void UpdateUser(MembershipUser user)
+        public override void UpdateUser(MembershipUser membershipUser)
         {
-            throw new NotImplementedException();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var user = GetUser(u => u.Name.ToLower() == membershipUser.UserName.ToLower(), ctx);
+
+                if (RequiresUniqueEmail)
+                {
+                    var userWithSameEmail = GetUser(u => u.Email.ToLower() == membershipUser.Email.ToLower(), ctx);
+                    if (userWithSameEmail != null && userWithSameEmail.Name != user.Email)
+                    {
+                        throw new ProviderException(Resource.msg_EmailDuplication);
+                    }
+                }
+                user.Email = membershipUser.Email;
+
+                user.IsConfirmed = membershipUser.IsApproved;
+                if (user.IsLockedOut && !membershipUser.IsLockedOut)
+                {
+                    user.IsLockedOut = membershipUser.IsLockedOut;
+                    user.LastLockoutDate = DateTime.Now;
+                }
+
+                ctx.SaveChanges();
+            }
         }
 
         public override bool ValidateUser(string username, string password)
@@ -561,6 +619,65 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         #endregion
 
         #region private methods
+
+        // TODO
+        // encryp according to the PasswordFormat
+        private string EncryptPassword(string clearText)
+        {
+            string encrypted = clearText;
+
+            switch (PasswordFormat)
+            {
+                case MembershipPasswordFormat.Clear:
+                    break;
+                case MembershipPasswordFormat.Encrypted:
+                    // TODO
+                    break;
+                case MembershipPasswordFormat.Hashed:
+                    break;
+            }
+
+            return encrypted;
+        }
+        // TODO
+        // decrypt according to the PasswordFormat
+        private string DecryptPassword(string password)
+        {
+            string decrypted = password;
+            switch (PasswordFormat)
+            {
+                case MembershipPasswordFormat.Clear:
+                    break;
+                case MembershipPasswordFormat.Hashed:
+                    throw new ProviderException(Resource.msg_CannotDecryptHashedPwd);
+                case MembershipPasswordFormat.Encrypted:
+                    // TODO you know what should be done here.
+                    break;
+            }
+            return decrypted;
+        }
+        private bool CheckPwdComplexity(string clearText)
+        {
+            return (
+                       !string.IsNullOrEmpty(clearText)
+                       && clearText.Length >= MinRequiredPasswordLength
+                       && GetSpecialCharsCount(clearText) >= minRequiredNonAlphanumericCharacters
+                   );
+        }
+        private int GetSpecialCharsCount(string s)
+        {
+            int count = 0;
+            s.ToList().ForEach(c =>
+            {
+                int i;
+                if (!int.TryParse(c.ToString(CultureInfo.InvariantCulture), out i)
+                    && !(('a' < c && c < 'z') || ('A' < c && c < 'Z')))
+                {
+                    ++count;
+                }
+            });
+            return count;
+        }
 
         private MembershipUser GetMembershipUserFromUser(User user)
         {

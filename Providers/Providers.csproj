@@ -48,6 +48,8 @@
   <ItemGroup>
     <Compile Include="EFMemberException.cs" />
     <Compile Include="EFMembershipProvider.cs" />
+    <Compile Include="EFProfileProvider.cs" />
+    <Compile Include="EFRoleProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProviderUtils.cs" />
     <Compile Include="Resource.Designer.cs">

@@ -117,8 +117,23 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="msg_AnswerNotMatched" xml:space="preserve">
+    <value>密码匹配用户 {0} 失败。</value>
+  </data>
+  <data name="msg_AnswerRequiredOnPwdReset" xml:space="preserve">
+    <value>密码重设时需要提供问题答案。</value>
+  </data>
+  <data name="msg_CannotDecryptHashedPwd" xml:space="preserve">
+    <value>不支持解密Hash后的密码。</value>
+  </data>
   <data name="msg_CannotRetrieveHashedPwd" xml:space="preserve">
     <value>不支持取回Hash后的密码。</value>
+  </data>
+  <data name="msg_EmailDuplication" xml:space="preserve">
+    <value>Email与已有用户的重复。</value>
+  </data>
+  <data name="msg_PwdResetNotEnabled" xml:space="preserve">
+    <value>密码重设未被启用。</value>
   </data>
   <data name="msg_PwdRetrivalNotEnabled" xml:space="preserve">
     <value>密码取回未被启用。</value>

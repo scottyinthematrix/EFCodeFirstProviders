@@ -61,11 +61,56 @@ namespace ScottyApps.EFCodeFirstProviders.Providers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Answer does NOT match for user {0}..
+        /// </summary>
+        internal static string msg_AnswerNotMatched {
+            get {
+                return ResourceManager.GetString("msg_AnswerNotMatched", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Answer is required for the password reset..
+        /// </summary>
+        internal static string msg_AnswerRequiredOnPwdReset {
+            get {
+                return ResourceManager.GetString("msg_AnswerRequiredOnPwdReset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Can NOT decrypt a Hashed password..
+        /// </summary>
+        internal static string msg_CannotDecryptHashedPwd {
+            get {
+                return ResourceManager.GetString("msg_CannotDecryptHashedPwd", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can NOT retrieve a Hashed password..
         /// </summary>
         internal static string msg_CannotRetrieveHashedPwd {
             get {
                 return ResourceManager.GetString("msg_CannotRetrieveHashedPwd", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email duplicates with existings..
+        /// </summary>
+        internal static string msg_EmailDuplication {
+            get {
+                return ResourceManager.GetString("msg_EmailDuplication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password reset NOT enabled..
+        /// </summary>
+        internal static string msg_PwdResetNotEnabled {
+            get {
+                return ResourceManager.GetString("msg_PwdResetNotEnabled", resourceCulture);
             }
         }
         

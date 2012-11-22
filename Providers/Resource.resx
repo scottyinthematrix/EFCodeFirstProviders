@@ -117,8 +117,23 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="msg_AnswerNotMatched" xml:space="preserve">
+    <value>Answer does NOT match for user {0}.</value>
+  </data>
+  <data name="msg_AnswerRequiredOnPwdReset" xml:space="preserve">
+    <value>Answer is required for the password reset.</value>
+  </data>
+  <data name="msg_CannotDecryptHashedPwd" xml:space="preserve">
+    <value>Can NOT decrypt a Hashed password.</value>
+  </data>
   <data name="msg_CannotRetrieveHashedPwd" xml:space="preserve">
     <value>Can NOT retrieve a Hashed password.</value>
+  </data>
+  <data name="msg_EmailDuplication" xml:space="preserve">
+    <value>Email duplicates with existings.</value>
+  </data>
+  <data name="msg_PwdResetNotEnabled" xml:space="preserve">
+    <value>Password reset NOT enabled.</value>
   </data>
   <data name="msg_PwdRetrivalNotEnabled" xml:space="preserve">
     <value>Password retrieval NOT enabled.</value>
