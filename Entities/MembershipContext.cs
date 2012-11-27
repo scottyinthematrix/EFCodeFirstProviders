@@ -52,7 +52,7 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
                         .Map(m => m.MapKey("ApplicationId"))
                         .WillCascadeOnDelete(false);
             modelBuilder.Entity<Role>()
-                        .HasRequired(r => r.Parent)
+                        .HasOptional(r => r.Parent)
                         .WithMany(r => r.Children)
                         .Map(m => m.MapKey("PId"));
             // User.ApplicationId

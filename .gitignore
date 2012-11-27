@@ -91,7 +91,7 @@ AppPackages/
 # Others
 [Bb]in
 [Oo]bj
-sql
+#sql	- sometimes we need this [scotty]
 TestResults
 [Tt]est[Rr]esult*
 *.Cache

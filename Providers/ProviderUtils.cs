@@ -9,6 +9,8 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 {
     internal class ProviderUtils
     {
+        delegate Func<T, R> Recursive<T, R>(Recursive<T, R> r);
+
         /// <summary>
         /// A helper function to retrieve config values from the configuration file.
         /// </summary>
@@ -56,6 +58,12 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             return application;
+        }
+
+        static Func<T, R> Y<T, R>(Func<Func<T, R>, Func<T, R>> f)
+        {
+            Recursive<T, R> rec = r => a => f(r(r))(a);
+            return rec(rec);
         }
     }
 }

@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Web.Security;
+using ScottyApps.EFCodeFirstProviders.Entities;
 
 namespace ScottyApps.EFCodeFirstProviders.Providers
 {
     public class EFRoleProvider : RoleProvider
     {
+
         public override bool IsUserInRole(string username, string roleName)
         {
             throw new NotImplementedException();
@@ -15,7 +18,19 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override string[] GetRolesForUser(string username)
         {
-            throw new NotImplementedException();
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var roleNames = ctx.Database.SqlQuery<string>("dbo.usp_GetRolesForUser @userName @appName", username, ApplicationName).ToList();
+                return roleNames.ToArray();
+            }
+        }
+
+        private void GetParentRoles(Role role, ref Hashtable roles)
+        {
+            using (MembershipContext ctx = new MembershipContext())
+            {
+                var query = role.Parent.Parent.Parent;
+            }
         }
 
         public override void CreateRole(string roleName)
