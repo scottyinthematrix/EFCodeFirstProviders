@@ -200,7 +200,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             {
                 return false;
             }
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user =
                     ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
@@ -218,7 +218,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 return false;
             }
 
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user =
                     ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
@@ -244,7 +244,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = null;
                 // check username uniqueness
@@ -289,7 +289,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool DeleteUser(string username, bool deleteAllRelatedData)
         {
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
                 if (user == null)
@@ -306,7 +306,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var query = ctx.Users.Where(MatchApplication());
                 if (!string.IsNullOrEmpty(emailToMatch.Trim()))
@@ -327,7 +327,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var query = ctx.Users.Where(MatchApplication());
                 if (!string.IsNullOrEmpty(usernameToMatch.Trim()))
@@ -348,7 +348,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var query = ctx.Users.Where(MatchApplication());
                 totalRecords = query.Count();
@@ -371,7 +371,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             TimeSpan onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
             DateTime compareTime = DateTime.Now.Subtract(onlineSpan);
 
-            using (MembershipContext context = new MembershipContext())
+            using (MembershipContext context = CreateContext())
             {
                 return context.Users.Where(MatchApplication()).Count(u => u.LastActiveDate > compareTime);
             }
@@ -391,7 +391,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
             string pwd;
 
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
                 if (user == null)
@@ -428,7 +428,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUser GetUser(string username, bool userIsOnline)
         {
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
                 if (user != null)
@@ -449,7 +449,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             Guid userId = (Guid)providerUserKey;
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = GetUser(u => u.Id == userId, ctx);
                 if (user != null)
@@ -470,7 +470,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             string userName = string.Empty;
 
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var user = ctx.Users.Where(MatchApplication()).Single(u => u.Email.ToLower() == email.ToLower());
                 if (user != null)
@@ -495,7 +495,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             string newPwd;
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
                 if (user == null)
@@ -523,7 +523,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool UnlockUser(string userName)
         {
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var user = GetUser(u => u.Name.ToLower() == userName.ToLower(), ctx);
                 if (user == null)
@@ -539,7 +539,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override void UpdateUser(MembershipUser membershipUser)
         {
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 var user = GetUser(u => u.Name.ToLower() == membershipUser.UserName.ToLower(), ctx);
 
@@ -566,7 +566,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool ValidateUser(string username, string password)
         {
-            using (MembershipContext ctx = new MembershipContext())
+            using (MembershipContext ctx = CreateContext())
             {
                 User user = ctx.Users.First(u => String.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
                 if (user == null)
@@ -711,6 +711,11 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         private Expression<Func<User, bool>> MatchApplication()
         {
             return user => user.Application.Name.ToLower() == ApplicationName.ToLower();
+        }
+
+        private MembershipContext CreateContext()
+        {
+            return new MembershipContext(ConnectionString);
         }
 
         #endregion

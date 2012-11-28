@@ -124,6 +124,15 @@ namespace ScottyApps.EFCodeFirstProviders.Providers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Role name duplicates with existings..
+        /// </summary>
+        internal static string msg_RoleNameDuplication {
+            get {
+                return ResourceManager.GetString("msg_RoleNameDuplication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User {0} is locked out..
         /// </summary>
         internal static string msg_UserLockedOut {

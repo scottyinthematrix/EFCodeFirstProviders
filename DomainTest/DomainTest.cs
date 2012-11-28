@@ -11,7 +11,7 @@ namespace ScottyApps.EFCodeFirstProviders.DomainTest
         public void TriggerTheDbCreationTest()
         {
             Application app = null;
-            using(MembershipContext ctx = new MembershipContext())
+            using(MembershipContext ctx = new MembershipContext("MembershipContext"))
             {
                 app = ctx.Applications.Find(Guid.Empty);
             }

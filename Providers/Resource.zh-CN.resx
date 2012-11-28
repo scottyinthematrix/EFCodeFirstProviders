@@ -138,6 +138,9 @@
   <data name="msg_PwdRetrivalNotEnabled" xml:space="preserve">
     <value>密码取回未被启用。</value>
   </data>
+  <data name="msg_RoleNameDuplication" xml:space="preserve">
+    <value>角色名与现有的重复。</value>
+  </data>
   <data name="msg_UserLockedOut" xml:space="preserve">
     <value>用户 {0} 已经被锁定。</value>
   </data>

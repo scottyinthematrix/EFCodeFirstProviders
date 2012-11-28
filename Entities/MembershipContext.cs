@@ -10,6 +10,9 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
     // move it to other projects if you'd like a 100 percent persistency unaware entity layer
     public class MembershipContext : DbContext
     {
+        public MembershipContext(string nameOrConnectionString)
+            : base(nameOrConnectionString)
+        { }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
