@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using ScottyApps.Utilities.DbContextExtensions;
 
 namespace ScottyApps.EFCodeFirstProviders.Entities
 {
-    public class Application
+    public class Application : EntityBase
     {
         [Key]
         public Guid Id { get; set; }

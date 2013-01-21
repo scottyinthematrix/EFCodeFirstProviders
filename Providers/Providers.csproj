@@ -59,6 +59,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\DbContextExtensions\DbContextExtensions.csproj">
+      <Project>{A0FFB978-5CA5-447F-BD9F-03F1C25911B1}</Project>
+      <Name>DbContextExtensions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Entities\Entities.csproj">
       <Project>{a4e211c5-c4b7-4aa2-a584-af1cc999a692}</Project>
       <Name>Entities</Name>

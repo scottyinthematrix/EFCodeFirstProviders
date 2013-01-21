@@ -4,10 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using ScottyApps.Utilities.DbContextExtensions;
 
 namespace ScottyApps.EFCodeFirstProviders.Entities
 {
-    public class Role
+    public class Role : EntityBase
     {
         [Key]
         public Guid Id { get; set; }

@@ -4,12 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using ScottyApps.Utilities.DbContextExtensions;
 
 namespace ScottyApps.EFCodeFirstProviders.Entities
 {
     // TODO
     // some fields may never be needed
-    public class User
+    public class User : EntityBase
     {
         [Key]
         public Guid Id { get; set; }

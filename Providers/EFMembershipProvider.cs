@@ -11,31 +11,32 @@ using System.Web.Configuration;
 using System.Web.Hosting;
 using System.Web.Security;
 using ScottyApps.EFCodeFirstProviders.Entities;
+using ScottyApps.Utilities.DbContextExtensions;
 
 namespace ScottyApps.EFCodeFirstProviders.Providers
 {
     public class EFMembershipProvider : MembershipProvider
     {
         #region members
-        private int maxInvalidPasswordAttempts;
+        private int _maxInvalidPasswordAttempts;
         public override int MaxInvalidPasswordAttempts
         {
-            get { return maxInvalidPasswordAttempts; }
+            get { return _maxInvalidPasswordAttempts; }
         }
 
-        private int minRequiredNonAlphanumericCharacters;
+        private int _minRequiredNonAlphanumericCharacters;
         public override int MinRequiredNonAlphanumericCharacters
         {
-            get { return minRequiredNonAlphanumericCharacters; }
+            get { return _minRequiredNonAlphanumericCharacters; }
         }
 
-        private int minRequiredPasswordLength;
+        private int _minRequiredPasswordLength;
         public override int MinRequiredPasswordLength
         {
-            get { return minRequiredPasswordLength; }
+            get { return _minRequiredPasswordLength; }
         }
 
-        private int passwordAttemptWindow;
+        private int _passwordAttemptWindow;
 
         /// <summary>
         /// Gets the number of minutes in which a maximum number of invalid password or password-answer attempts are allowed before the membership user is locked out.
@@ -45,43 +46,43 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         /// </returns>
         public override int PasswordAttemptWindow
         {
-            get { return passwordAttemptWindow; }
+            get { return _passwordAttemptWindow; }
         }
 
-        private MembershipPasswordFormat passwordFormat;
+        private MembershipPasswordFormat _passwordFormat;
         public override MembershipPasswordFormat PasswordFormat
         {
-            get { return passwordFormat; }
+            get { return _passwordFormat; }
         }
 
-        private string passwordStrengthRegularExpression;
+        private string _passwordStrengthRegularExpression;
         public override string PasswordStrengthRegularExpression
         {
-            get { return passwordStrengthRegularExpression; }
+            get { return _passwordStrengthRegularExpression; }
         }
 
-        private bool requiresQuestionAndAnswer;
+        private bool _requiresQuestionAndAnswer;
         public override bool RequiresQuestionAndAnswer
         {
-            get { return requiresQuestionAndAnswer; }
+            get { return _requiresQuestionAndAnswer; }
         }
 
-        private bool requiresUniqueEmail;
+        private bool _requiresUniqueEmail;
         public override bool RequiresUniqueEmail
         {
-            get { return requiresUniqueEmail; }
+            get { return _requiresUniqueEmail; }
         }
 
-        private bool enablePasswordReset;
+        private bool _enablePasswordReset;
         public override bool EnablePasswordReset
         {
-            get { return enablePasswordReset; }
+            get { return _enablePasswordReset; }
         }
 
-        private bool enablePasswordRetrieval;
+        private bool _enablePasswordRetrieval;
         public override bool EnablePasswordRetrieval
         {
-            get { return enablePasswordRetrieval; }
+            get { return _enablePasswordRetrieval; }
         }
 
         public string ConnectionString { get; set; }
@@ -113,24 +114,24 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             base.Initialize(name, config);
 
             ApplicationName = Convert.ToString(ProviderUtils.GetConfigValue(config, "applicationName", HostingEnvironment.ApplicationVirtualPath));
-            maxInvalidPasswordAttempts = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "maxInvalidPasswordAttempts", "5"));
-            passwordAttemptWindow = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "passwordAttemptWindow", "10"));
-            minRequiredNonAlphanumericCharacters = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "minRequiredNonAlphanumericCharacters", "1"));
-            minRequiredPasswordLength = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "minRequiredPasswordLength", "7"));
-            passwordStrengthRegularExpression = Convert.ToString(ProviderUtils.GetConfigValue(config, "passwordStrengthRegularExpression", string.Empty));
-            enablePasswordReset = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "enablePasswordReset", "true"));
-            enablePasswordRetrieval = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "enablePasswordRetrieval", "false"));
-            requiresQuestionAndAnswer = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "requiresQuestionAndAnswer", "true"));
-            requiresUniqueEmail = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "requiresUniqueEmail", "true"));
+            _maxInvalidPasswordAttempts = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "maxInvalidPasswordAttempts", "5"));
+            _passwordAttemptWindow = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "passwordAttemptWindow", "10"));
+            _minRequiredNonAlphanumericCharacters = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "minRequiredNonAlphanumericCharacters", "1"));
+            _minRequiredPasswordLength = Convert.ToInt32(ProviderUtils.GetConfigValue(config, "minRequiredPasswordLength", "7"));
+            _passwordStrengthRegularExpression = Convert.ToString(ProviderUtils.GetConfigValue(config, "passwordStrengthRegularExpression", string.Empty));
+            _enablePasswordReset = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "enablePasswordReset", "true"));
+            _enablePasswordRetrieval = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "enablePasswordRetrieval", "false"));
+            _requiresQuestionAndAnswer = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "requiresQuestionAndAnswer", "true"));
+            _requiresUniqueEmail = Convert.ToBoolean(ProviderUtils.GetConfigValue(config, "requiresUniqueEmail", "true"));
 
-            if (!string.IsNullOrEmpty(passwordStrengthRegularExpression))
+            if (!string.IsNullOrEmpty(_passwordStrengthRegularExpression))
             {
-                passwordStrengthRegularExpression = passwordStrengthRegularExpression.Trim();
-                if (!string.IsNullOrEmpty(passwordStrengthRegularExpression))
+                _passwordStrengthRegularExpression = _passwordStrengthRegularExpression.Trim();
+                if (!string.IsNullOrEmpty(_passwordStrengthRegularExpression))
                 {
                     try
                     {
-                        new Regex(passwordStrengthRegularExpression);
+                        new Regex(_passwordStrengthRegularExpression);
                     }
                     catch (ArgumentException ex)
                     {
@@ -138,7 +139,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                     }
                 }
 
-                if (minRequiredPasswordLength < minRequiredNonAlphanumericCharacters)
+                if (_minRequiredPasswordLength < _minRequiredNonAlphanumericCharacters)
                 {
                     throw new ProviderException("Minimal required non alphanumeric characters cannot be longer than the minimum required password length.");
                 }
@@ -149,13 +150,13 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             switch (format)
             {
                 case "Hashed":
-                    passwordFormat = MembershipPasswordFormat.Hashed;
+                    _passwordFormat = MembershipPasswordFormat.Hashed;
                     break;
                 case "Encrypted":
-                    passwordFormat = MembershipPasswordFormat.Encrypted;
+                    _passwordFormat = MembershipPasswordFormat.Encrypted;
                     break;
                 case "Clear":
-                    passwordFormat = MembershipPasswordFormat.Clear;
+                    _passwordFormat = MembershipPasswordFormat.Clear;
                     break;
                 default:
                     throw new ProviderException("Password format not supported.");
@@ -192,18 +193,17 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool ChangePassword(string username, string oldPassword, string newPassword)
         {
-            if (!ValidateUser(username, oldPassword))
-            {
-                return false;
-            }
-            if (!CheckPwdComplexity(newPassword))
-            {
-                return false;
-            }
             using (MembershipContext ctx = CreateContext())
             {
-                User user =
-                    ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
+                User user;
+                if (!ValidateUser(username, oldPassword, ctx, out user))
+                {
+                    return false;
+                }
+                if (!CheckPwdComplexity(newPassword))
+                {
+                    return false;
+                }
                 user.Password = EncryptPassword(newPassword);
                 ctx.SaveChanges();
             }
@@ -564,53 +564,61 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
         }
 
+        private bool ValidateUser(string username, string password, MembershipContext ctx, out User user)
+        {
+            user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+            if (user == null)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
+            }
+            if (!user.IsConfirmed)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
+            }
+            if (!user.IsLockedOut)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
+            }
+
+            string encryptedPwd = EncryptPassword(password);
+            if (encryptedPwd != user.Password)
+            {
+                // update falure password attempt count
+                DateTime? lastFailureTry = user.FailedPasswordAttempWindowStart;
+                if (lastFailureTry == null || DateTime.Now > lastFailureTry.Value.AddMinutes(PasswordAttemptWindow))
+                {
+                    user.FailedPasswordAttempWindowStart = DateTime.Now;
+                    user.FailedPasswordAttempCount = 1;
+                }
+                else
+                {
+                    ++user.FailedPasswordAttempCount;
+                }
+
+                if (user.FailedPasswordAttempCount >= MaxInvalidPasswordAttempts)
+                {
+                    user.IsLockedOut = true;
+                    user.LastLockoutDate = DateTime.Now;
+                }
+                ctx.SaveChanges();
+
+                throw new EFMemberException(EFMembershipValidationStatus.WrongPassword, string.Format(Resource.msg_WrongPassword, username));
+            }
+
+            // update last date
+            user.LastActiveDate = DateTime.Now;
+            user.LastLoginDate = DateTime.Now;
+            return true;
+        }
         public override bool ValidateUser(string username, string password)
         {
             using (MembershipContext ctx = CreateContext())
             {
-                User user = ctx.Users.First(u => String.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
-                if (user == null)
+                User user = null;
+                if (ValidateUser(username, password, ctx, out user))
                 {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
-                }
-                if (!user.IsConfirmed)
-                {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
-                }
-                if (!user.IsLockedOut)
-                {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
-                }
-
-                string encryptedPwd = EncryptPassword(password);
-                if (encryptedPwd != user.Password)
-                {
-                    // update falure password attempt count
-                    DateTime? lastFailureTry = user.FailedPasswordAttempWindowStart;
-                    if (lastFailureTry == null || DateTime.Now > lastFailureTry.Value.AddMinutes(PasswordAttemptWindow))
-                    {
-                        user.FailedPasswordAttempWindowStart = DateTime.Now;
-                        user.FailedPasswordAttempCount = 1;
-                    }
-                    else
-                    {
-                        ++user.FailedPasswordAttempCount;
-                    }
-
-                    if (user.FailedPasswordAttempCount >= MaxInvalidPasswordAttempts)
-                    {
-                        user.IsLockedOut = true;
-                        user.LastLockoutDate = DateTime.Now;
-                    }
                     ctx.SaveChanges();
-
-                    throw new EFMemberException(EFMembershipValidationStatus.WrongPassword, string.Format(Resource.msg_WrongPassword, username));
                 }
-
-                // update last date
-                user.LastActiveDate = DateTime.Now;
-                user.LastLoginDate = DateTime.Now;
-                ctx.SaveChanges();
             }
 
             return true;
@@ -661,7 +669,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             return (
                        !string.IsNullOrEmpty(clearText)
                        && clearText.Length >= MinRequiredPasswordLength
-                       && GetSpecialCharsCount(clearText) >= minRequiredNonAlphanumericCharacters
+                       && GetSpecialCharsCount(clearText) >= _minRequiredNonAlphanumericCharacters
                    );
         }
         private int GetSpecialCharsCount(string s)
@@ -712,7 +720,6 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             return user => user.Application.Name.ToLower() == ApplicationName.ToLower();
         }
-
         private MembershipContext CreateContext()
         {
             return new MembershipContext(ConnectionString);
