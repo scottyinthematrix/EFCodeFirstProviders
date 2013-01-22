@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using ScottyApps.EFCodeFirstProviders.Entities;
 
@@ -10,6 +12,11 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
     internal class ProviderUtils
     {
         delegate Func<T, R> Recursive<T, R>(Recursive<T, R> r);
+        static Func<T, R> Y<T, R>(Func<Func<T, R>, Func<T, R>> f)
+        {
+            Recursive<T, R> rec = r => a => f(r(r))(a);
+            return rec(rec);
+        }
 
         /// <summary>
         /// A helper function to retrieve config values from the configuration file.
@@ -18,7 +25,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         /// <param name="configKey">Key of the configuration that should be read.</param>
         /// <param name="defaultValue">Default value being used if the config does not exist.</param>
         /// <returns>Configuration value or default value if not exisiting.</returns>
-        public static object GetConfigValue(NameValueCollection config, string configKey, object defaultValue)
+        internal static object GetConfigValue(NameValueCollection config, string configKey, object defaultValue)
         {
             object configValue;
 
@@ -41,7 +48,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         /// <param name="applicationName">Application name.</param>
         /// <param name="context">Membership data context.</param>
         /// <returns>The application object</returns>
-        public static Application EnsureApplication(string applicationName, MembershipContext context)
+        internal static Application EnsureApplication(string applicationName, MembershipContext context)
         {
             Application application = context.Applications.FirstOrDefault(a => a.Name == applicationName);
             if (application == null)
@@ -60,10 +67,11 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             return application;
         }
 
-        static Func<T, R> Y<T, R>(Func<Func<T, R>, Func<T, R>> f)
+        internal static T CreateContext<T>(string connStr)
+            where T : DbContext
         {
-            Recursive<T, R> rec = r => a => f(r(r))(a);
-            return rec(rec);
+            return (T)Activator.CreateInstance(typeof(T), connStr);
         }
+
     }
 }

@@ -53,7 +53,9 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
                         .HasRequired(r => r.Application)
                         .WithMany(a => a.Roles)
                         .Map(m => m.MapKey("ApplicationId"))
+                        // NOTE this is necessary as otherwise it will cause a circular constraint
                         .WillCascadeOnDelete(false);
+            // [Role] Parent-Child
             modelBuilder.Entity<Role>()
                         .HasOptional(r => r.Parent)
                         .WithMany(r => r.Children)
@@ -69,8 +71,9 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
                         .HasRequired(f => f.Application)
                         .WithMany(a => a.Functions)
                         .Map(m => m.MapKey("ApplicationId"));
+            // [Function] Parent-Child
             modelBuilder.Entity<Function>()
-                        .HasRequired(f => f.Parent)
+                        .HasOptional(f => f.Parent)
                         .WithMany(f => f.Children)
                         .Map(m => m.MapKey("PId"));
             modelBuilder.Entity<Profile>()

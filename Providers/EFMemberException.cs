@@ -19,6 +19,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
     {
         UserNotExist = 0,
         WrongPassword,
+        WrongAnswer,
         UserNotConfirmed,
         UserIsLockedOut
     }

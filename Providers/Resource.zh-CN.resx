@@ -118,7 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="msg_AnswerNotMatched" xml:space="preserve">
-    <value>密码匹配用户 {0} 失败。</value>
+    <value>用户 {0} 密码问题答案匹配失败。</value>
+  </data>
+  <data name="msg_AnswerRequiredOnGetPwd" xml:space="preserve">
+    <value>获取密码时需要提供问题答案。</value>
   </data>
   <data name="msg_AnswerRequiredOnPwdReset" xml:space="preserve">
     <value>密码重设时需要提供问题答案。</value>

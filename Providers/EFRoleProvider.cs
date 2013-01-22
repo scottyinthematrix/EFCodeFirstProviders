@@ -10,6 +10,7 @@ using System.Text;
 using System.Web.Hosting;
 using System.Web.Security;
 using ScottyApps.EFCodeFirstProviders.Entities;
+using ScottyApps.Utilities.DbContextExtensions;
 
 namespace ScottyApps.EFCodeFirstProviders.Providers
 {
@@ -17,7 +18,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
     {
         public bool Equals(Role x, Role y)
         {
-            return x.Name == y.Name;
+            return x.Name.ToLower() == y.Name.ToLower();
         }
 
         public int GetHashCode(Role obj)
@@ -29,6 +30,8 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
     public class EFRoleProvider : RoleProvider
     {
         private string ConnectionString { get; set; }
+
+        #region override methods
 
         public override void Initialize(string name, NameValueCollection config)
         {
@@ -52,10 +55,13 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             // Initialize the abstract base class.
             base.Initialize(name, config);
 
-            ApplicationName = (string)ProviderUtils.GetConfigValue(config, "applicationName", HostingEnvironment.ApplicationVirtualPath);
+            ApplicationName =
+                (string)
+                ProviderUtils.GetConfigValue(config, "applicationName", HostingEnvironment.ApplicationVirtualPath);
 
             // Read connection string.
-            ConnectionStringSettings connectionStringSettings = ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
+            ConnectionStringSettings connectionStringSettings =
+                ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
 
             if (connectionStringSettings == null || connectionStringSettings.ConnectionString.Trim() == string.Empty)
             {
@@ -78,22 +84,29 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override string[] GetRolesForUser(string username)
         {
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
-                var roleNames = ctx.Database.SqlQuery<string>("exec dbo.usp_GetRolesForUser @userName='{0}', @appName='{1}'", username, ApplicationName).ToList();
+                var roleNames =
+                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetRolesForUser @userName='{0}', @appName='{1}'",
+                                                  username, ApplicationName).ToList();
                 return roleNames.ToArray();
             }
         }
 
         public override void CreateRole(string roleName)
         {
-            if (RoleExists(roleName))
+            if (string.IsNullOrEmpty(roleName))
             {
-                throw new ProviderException(Resource.msg_RoleNameDuplication);
+                throw new ArgumentNullException("roleName");
             }
 
             using (var ctx = CreateContext())
             {
+                if (RoleExists(roleName, ctx))
+                {
+                    throw new ProviderException(Resource.msg_RoleNameDuplication);
+                }
+
                 var app = ProviderUtils.EnsureApplication(ApplicationName, ctx);
                 var role = new Role
                                {
@@ -104,6 +117,11 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 ctx.Roles.Add(role);
                 ctx.SaveChanges();
             }
+        }
+        // TODO add a child role
+        public void CreateRole(string roleName, string parentRoleName)
+        {
+            
         }
 
         public override bool DeleteRole(string roleName, bool throwOnPopulatedRole)
@@ -129,11 +147,17 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool RoleExists(string roleName)
         {
+            if (string.IsNullOrEmpty(roleName))
+            {
+                throw new ArgumentNullException("roleName");
+            }
+
+            bool exist = false;
             using (var ctx = CreateContext())
             {
-                var role = GetRole(r => r.Name.ToLower() == roleName.ToLower(), ctx);
-                return role != null;
+                exist = RoleExists(roleName, ctx);
             }
+            return exist;
         }
 
         public override void AddUsersToRoles(string[] usernames, string[] roleNames)
@@ -212,7 +236,8 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             using (var ctx = CreateContext())
             {
                 var userNames =
-                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}'", roleName, ApplicationName)
+                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}'",
+                                                  roleName, ApplicationName)
                        .ToList();
                 return userNames.ToArray();
             }
@@ -226,13 +251,20 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 return roleNames;
             }
         }
+        // TODO return roles in JSON
+        public IEnumerable<Role> GetRoles()
+        {
+            throw new NotImplementedException("");
+        }
 
         public override string[] FindUsersInRole(string roleName, string usernameToMatch)
         {
             using (var ctx = CreateContext())
             {
                 var userNames =
-                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}', @userName='{2}'", roleName, ApplicationName, usernameToMatch)
+                    ctx.Database.SqlQuery<string>(
+                        "exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}', @userName='{2}'", roleName,
+                        ApplicationName, usernameToMatch)
                        .ToList();
                 return userNames.ToArray();
             }
@@ -240,17 +272,38 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override string ApplicationName { get; set; }
 
+        #endregion
+
+        #region private methods
+
         private MembershipContext CreateContext()
         {
             return new MembershipContext(ConnectionString);
         }
+
         private Expression<Func<Role, bool>> MatchApplication()
         {
             return r => r.Application.Name == ApplicationName;
         }
+
+        private Expression<Func<Role, bool>> MatchName(string roleName)
+        {
+            return r => r.Name.ToLower() == roleName.ToLower();
+        }
+
         private Role GetRole(Expression<Func<Role, bool>> predicate, MembershipContext ctx)
         {
             return ctx.Roles.Where(MatchApplication()).Where(predicate).Single();
         }
+
+        private bool RoleExists(string roleName, MembershipContext ctx)
+        {
+            bool exist = false;
+            var predicate = MatchApplication().And(MatchName(roleName));
+            exist = ctx.Roles.Count(predicate.ToExpressionFunc()) > 0;
+            return exist;
+        }
+
+        #endregion
     }
 }

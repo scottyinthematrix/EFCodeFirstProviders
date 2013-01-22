@@ -193,7 +193,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool ChangePassword(string username, string oldPassword, string newPassword)
         {
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
                 User user;
                 if (!ValidateUser(username, oldPassword, ctx, out user))
@@ -213,15 +213,14 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPasswordQuestion, string newPasswordAnswer)
         {
-            if (!ValidateUser(username, password))
+            using (var ctx = CreateContext())
             {
-                return false;
-            }
+                User user;
+                if (!ValidateUser(username, password, ctx, out user))
+                {
+                    return false;
+                }
 
-            using (MembershipContext ctx = CreateContext())
-            {
-                User user =
-                    ctx.Users.First(u => string.Compare(u.Name, username, StringComparison.OrdinalIgnoreCase) == 0);
                 user.PasswordQuestion = newPasswordQuestion;
                 user.PasswordAnswer = newPasswordAnswer;
                 ctx.SaveChanges();
@@ -244,12 +243,11 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = CreateContext())
+            User user = null;
+            using (var ctx = CreateContext())
             {
-                User user = null;
                 // check username uniqueness
-                user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
-                if (user != null)
+                if (UserNameExist(username, ctx))
                 {
                     status = MembershipCreateStatus.DuplicateUserName;
                     return null;
@@ -258,8 +256,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 // check email uniqueness
                 if (RequiresUniqueEmail)
                 {
-                    user = GetUser(u => u.Email.ToLower() == email.ToLower(), ctx);
-                    if (user != null)
+                    if (UserEmailExist(email, ctx))
                     {
                         status = MembershipCreateStatus.DuplicateEmail;
                         return null;
@@ -280,45 +277,52 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                                 };
                 ctx.Users.Add(user);
                 ctx.SaveChanges();
-
-                membershipUser = GetMembershipUserFromUser(user);
             }
 
+            membershipUser = GetMembershipUserFromUser(user);
             return membershipUser;
         }
 
         public override bool DeleteUser(string username, bool deleteAllRelatedData)
         {
-            using (MembershipContext ctx = CreateContext())
+            var predicate = MatchApplication().ToEasyPredicate().And(u => u.Name.ToLower() == username.ToLower());
+            int affectedRows = 0;
+            using (var ctx = CreateContext())
             {
-                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
-                if (user == null)
-                {
-                    return false;
-                }
+                //User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                //if (user == null)
+                //{
+                //    return false;
+                //}
 
-                // TODO delete related data : UsersInRoles, Profiles
+                // TODO delete related data : UsersInRoles, Profiles - this could be a fucking problem in the future
+                affectedRows = ctx.Users.Delete(predicate.ToExpressionFunc());
             }
 
-            return true;
+            return affectedRows > 0;
         }
 
         public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = CreateContext())
-            {
-                var query = ctx.Users.Where(MatchApplication());
-                if (!string.IsNullOrEmpty(emailToMatch.Trim()))
-                {
-                    query = query.Where(u => u.Email.ToLower().Contains(emailToMatch.ToLower()));
-                }
-                totalRecords = query.Count();
+            List<User> users = null;
 
-                if (totalRecords > 0)
-                {
-                    query.Skip(pageIndex * pageSize).Take(pageSize).ToList().ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
-                }
+            totalRecords = 0;
+
+            var predicate = MatchApplication().ToEasyPredicate();
+            if (!string.IsNullOrEmpty(emailToMatch))
+            {
+                predicate = predicate.And(u => u.Email.ToLower().Contains(emailToMatch.ToLower()));
+            }
+            using (var ctx = CreateContext())
+            {
+                users = ctx.Users.Where(predicate.ToExpressionFunc())
+                               .ToPagedList(pageIndex, pageSize, out totalRecords);
+            }
+
+            if (totalRecords > 0)
+            {
+                users.ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
             }
 
             return membershipUsers;
@@ -327,19 +331,24 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = CreateContext())
-            {
-                var query = ctx.Users.Where(MatchApplication());
-                if (!string.IsNullOrEmpty(usernameToMatch.Trim()))
-                {
-                    query = query.Where(u => u.Name.ToLower().Contains(usernameToMatch.ToLower()));
-                }
-                totalRecords = query.Count();
+            List<User> users = null;
 
-                if (totalRecords > 0)
-                {
-                    query.Skip(pageIndex * pageSize).Take(pageSize).ToList().ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
-                }
+            totalRecords = 0;
+
+            var predicate = MatchApplication().ToEasyPredicate();
+            if (!string.IsNullOrEmpty(usernameToMatch))
+            {
+                predicate = predicate.And(u => u.Email.ToLower().Contains(usernameToMatch.ToLower()));
+            }
+
+            using (var ctx = CreateContext())
+            {
+                users = ctx.Users.Where(predicate.ToExpressionFunc())
+                               .ToPagedList(pageIndex, pageSize, out totalRecords);
+            }
+            if (totalRecords > 0)
+            {
+                users.ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
             }
 
             return membershipUsers;
@@ -348,19 +357,18 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
         {
             MembershipUserCollection membershipUsers = new MembershipUserCollection();
-            using (MembershipContext ctx = CreateContext())
-            {
-                var query = ctx.Users.Where(MatchApplication());
-                totalRecords = query.Count();
+            List<User> users = null;
 
-                if (totalRecords > 0)
-                {
-                    query
-                        .Skip(pageIndex * pageSize)
-                        .Take(pageSize)
-                        .ToList()
-                        .ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
-                }
+            totalRecords = 0;
+
+            using (var ctx = CreateContext())
+            {
+                users = ctx.Users.Where(MatchApplication()).ToPagedList(pageIndex, pageSize, out totalRecords);
+            }
+
+            if (totalRecords > 0)
+            {
+                users.ForEach(u => membershipUsers.Add(GetMembershipUserFromUser(u)));
             }
 
             return membershipUsers;
@@ -371,7 +379,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             TimeSpan onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
             DateTime compareTime = DateTime.Now.Subtract(onlineSpan);
 
-            using (MembershipContext context = CreateContext())
+            using (var context = CreateContext())
             {
                 return context.Users.Where(MatchApplication()).Count(u => u.LastActiveDate > compareTime);
             }
@@ -388,33 +396,34 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             {
                 throw new ProviderException(Resource.msg_CannotRetrieveHashedPwd);
             }
-
-            string pwd;
-
-            using (MembershipContext ctx = CreateContext())
+            if (string.IsNullOrEmpty(answer))
             {
-                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
-                if (user == null)
-                {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
-                }
-                if (!user.IsConfirmed)
-                {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
-                }
-                if (user.IsLockedOut)
-                {
-                    throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
-                }
-
-                pwd = user.Password;
-                if (PasswordFormat == MembershipPasswordFormat.Encrypted)
-                {
-                    pwd = DecryptPassword(user.Password);
-                }
+                throw new ArgumentNullException("answer", Resource.msg_AnswerRequiredOnGetPwd);
             }
 
-            return pwd;
+            User user = null;
+            using (var ctx = CreateContext())
+            {
+                user = GetUserByName(username, ctx);
+            }
+            if (user == null)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
+            }
+            if (!user.IsConfirmed)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
+            }
+            if (user.IsLockedOut)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
+            }
+            if (String.Compare(user.PasswordAnswer, answer, StringComparison.OrdinalIgnoreCase) != 0)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.WrongAnswer, string.Format(Resource.msg_AnswerNotMatched, username));
+            }
+
+            return DecryptPassword(user.Password);
         }
 
         /// <summary>
@@ -428,9 +437,9 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         public override MembershipUser GetUser(string username, bool userIsOnline)
         {
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
-                User user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                var user = GetUserByName(username, ctx);
                 if (user != null)
                 {
                     membershipUser = GetMembershipUserFromUser(user);
@@ -449,9 +458,9 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             Guid userId = (Guid)providerUserKey;
             MembershipUser membershipUser = null;
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
-                User user = GetUser(u => u.Id == userId, ctx);
+                var user = GetUser(u => u.Id == userId, ctx);
                 if (user != null)
                 {
                     membershipUser = GetMembershipUserFromUser(user);
@@ -468,15 +477,13 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override string GetUserNameByEmail(string email)
         {
-            string userName = string.Empty;
+            string userName;
 
-            using (MembershipContext ctx = CreateContext())
+            var predicate = MatchApplication().ToEasyPredicate().And(u => u.Email.ToLower() == email.ToLower());
+
+            using (var ctx = CreateContext())
             {
-                var user = ctx.Users.Where(MatchApplication()).Single(u => u.Email.ToLower() == email.ToLower());
-                if (user != null)
-                {
-                    userName = user.Name;
-                }
+                userName = ctx.Users.Where(predicate.ToExpressionFunc()).Select(u => u.Name).Single();
             }
 
             return userName;
@@ -495,9 +502,9 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             string newPwd;
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
-                var user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+                var user = GetUserByName(username, ctx);
                 if (user == null)
                 {
                     throw new ProviderException(string.Format(Resource.msg_UserNotExist, username));
@@ -523,9 +530,9 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         public override bool UnlockUser(string userName)
         {
-            using (MembershipContext ctx = CreateContext())
+            using (var ctx = CreateContext())
             {
-                var user = GetUser(u => u.Name.ToLower() == userName.ToLower(), ctx);
+                var user = GetUserByName(userName, ctx);
                 if (user == null)
                 {
                     throw new ProviderException(Resource.msg_UserNotExist);
@@ -545,7 +552,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
                 if (RequiresUniqueEmail)
                 {
-                    var userWithSameEmail = GetUser(u => u.Email.ToLower() == membershipUser.Email.ToLower(), ctx);
+                    var userWithSameEmail = GetUserByEmail(membershipUser.Email, ctx);
                     if (userWithSameEmail != null && userWithSameEmail.Name != user.Email)
                     {
                         throw new ProviderException(Resource.msg_EmailDuplication);
@@ -564,52 +571,6 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
         }
 
-        private bool ValidateUser(string username, string password, MembershipContext ctx, out User user)
-        {
-            user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
-            if (user == null)
-            {
-                throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
-            }
-            if (!user.IsConfirmed)
-            {
-                throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
-            }
-            if (!user.IsLockedOut)
-            {
-                throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
-            }
-
-            string encryptedPwd = EncryptPassword(password);
-            if (encryptedPwd != user.Password)
-            {
-                // update falure password attempt count
-                DateTime? lastFailureTry = user.FailedPasswordAttempWindowStart;
-                if (lastFailureTry == null || DateTime.Now > lastFailureTry.Value.AddMinutes(PasswordAttemptWindow))
-                {
-                    user.FailedPasswordAttempWindowStart = DateTime.Now;
-                    user.FailedPasswordAttempCount = 1;
-                }
-                else
-                {
-                    ++user.FailedPasswordAttempCount;
-                }
-
-                if (user.FailedPasswordAttempCount >= MaxInvalidPasswordAttempts)
-                {
-                    user.IsLockedOut = true;
-                    user.LastLockoutDate = DateTime.Now;
-                }
-                ctx.SaveChanges();
-
-                throw new EFMemberException(EFMembershipValidationStatus.WrongPassword, string.Format(Resource.msg_WrongPassword, username));
-            }
-
-            // update last date
-            user.LastActiveDate = DateTime.Now;
-            user.LastLoginDate = DateTime.Now;
-            return true;
-        }
         public override bool ValidateUser(string username, string password)
         {
             using (MembershipContext ctx = CreateContext())
@@ -704,12 +665,80 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                                       user.LastPasswordChangedDate.GetValueOrDefault(),
                                       user.LastLockoutDate.GetValueOrDefault());
         }
+        private bool ValidateUser(string username, string password, MembershipContext ctx, out User user)
+        {
+            user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
+            if (user == null)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotExist, string.Format(Resource.msg_UserNotExist, username));
+            }
+            if (!user.IsConfirmed)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
+            }
+            if (!user.IsLockedOut)
+            {
+                throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
+            }
+
+            string encryptedPwd = EncryptPassword(password);
+            if (encryptedPwd != user.Password)
+            {
+                // update falure password attempt count
+                DateTime? lastFailureTry = user.FailedPasswordAttempWindowStart;
+                if (lastFailureTry == null || DateTime.Now > lastFailureTry.Value.AddMinutes(PasswordAttemptWindow))
+                {
+                    user.FailedPasswordAttempWindowStart = DateTime.Now;
+                    user.FailedPasswordAttempCount = 1;
+                }
+                else
+                {
+                    ++user.FailedPasswordAttempCount;
+                }
+
+                if (user.FailedPasswordAttempCount >= MaxInvalidPasswordAttempts)
+                {
+                    user.IsLockedOut = true;
+                    user.LastLockoutDate = DateTime.Now;
+                }
+                ctx.SaveChanges();
+
+                throw new EFMemberException(EFMembershipValidationStatus.WrongPassword, string.Format(Resource.msg_WrongPassword, username));
+            }
+
+            // update last date
+            user.LastActiveDate = DateTime.Now;
+            user.LastLoginDate = DateTime.Now;
+            return true;
+        }
 
         private User GetUser(Expression<Func<User, bool>> query, MembershipContext context)
         {
-            User user = context.Users.Where(query).Where(MatchApplication()).First();
+            User user = context.Users.Where(query).Where(MatchApplication()).Single();
 
             return user;
+        }
+        private User GetUserByName(string userName, MembershipContext ctx)
+        {
+            return GetUser(u => u.Name.ToLower() == userName.ToLower(), ctx);
+        }
+        private bool UserNameExist(string userName, MembershipContext ctx)
+        {
+            bool exist = false;
+            var predicate = MatchApplication().And(MatchUserName(userName));
+            exist = ctx.Users.Count(predicate.ToExpressionFunc()) > 0;
+            return exist;
+        }
+        private User GetUserByEmail(string email, MembershipContext ctx)
+        {
+            return GetUser(u => u.Email.ToLower() == email.ToLower(), ctx);
+        }
+        private bool UserEmailExist(string email, MembershipContext ctx)
+        {
+            bool exist = false;
+            var predicate = MatchApplication().And(MatchEmail(email));
+            exist = ctx.Users.Count(predicate.ToExpressionFunc()) > 0;
+            return exist;
         }
 
         /// <summary>
@@ -719,6 +748,14 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         private Expression<Func<User, bool>> MatchApplication()
         {
             return user => user.Application.Name.ToLower() == ApplicationName.ToLower();
+        }
+        private Expression<Func<User, bool>> MatchUserName(string userName)
+        {
+            return user => user.Name.ToLower() == userName.ToLower();
+        }
+        private Expression<Func<User, bool>> MatchEmail(string email)
+        {
+            return user => user.Email.ToLower() == email.ToLower();
         }
         private MembershipContext CreateContext()
         {

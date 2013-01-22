@@ -120,6 +120,9 @@
   <data name="msg_AnswerNotMatched" xml:space="preserve">
     <value>Answer does NOT match for user {0}.</value>
   </data>
+  <data name="msg_AnswerRequiredOnGetPwd" xml:space="preserve">
+    <value>Answer is Required for the password retrieval.</value>
+  </data>
   <data name="msg_AnswerRequiredOnPwdReset" xml:space="preserve">
     <value>Answer is required for the password reset.</value>
   </data>
