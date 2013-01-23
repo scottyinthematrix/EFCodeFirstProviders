@@ -1,4 +1,14 @@
-﻿alter procedure usp_GetFuncsInRole
+﻿----------------------------------------------------
+-- 1. ufn_GetParentRoles	:get all parent roles for role (including the role itself)
+-- 2. ufn_GetRolesForUser	:get all the roles that a user belongs to (including parent roles)
+-- 3. ufn_GetUsersInRole	:get all the users in role (including child roles)
+-- 4. ufn_GetFuncsInRole	:get all the functions for a role (including parent roles)
+-- 5. ufn_GetFuncsForUser	:get all the functions that a user can possess
+-- 6. ufn_GetRolesForFunc	:get all the roles that possess the function
+-- 7. ufn_GetUsersForFunc	:get all the users that possess the function
+
+----------------------------------------------------
+alter procedure usp_GetFuncsInRole
 	@roleName varchar(50),
 	@appName varchar(50)
 as
