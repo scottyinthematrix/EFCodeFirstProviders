@@ -32,15 +32,17 @@
   <ItemGroup>
     <Reference Include="EntityFramework, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Entities\bin\Debug\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.5.0.0\lib\net40\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="PowerCollections, Version=1.0.2141.24679, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\PowerCollections.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.Xml.Linq" />
@@ -82,9 +84,23 @@
     <EmbeddedResource Include="Resource.zh-CN.resx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="sql\testScript.sql" />
+    <Content Include="sql\ufn_GetChildRoles.sql" />
+    <Content Include="sql\ufn_GetFuncsForUser.sql" />
+    <Content Include="sql\ufn_GetFuncsInRole.sql" />
+    <Content Include="sql\ufn_GetParentRoles.sql" />
+    <Content Include="sql\ufn_GetRolesForFunc.sql" />
+    <Content Include="sql\ufn_GetRolesForUser.sql" />
+    <Content Include="sql\ufn_GetUsersForFunc.sql" />
+    <Content Include="sql\ufn_GetUsersInRole.sql" />
+    <Content Include="sql\ufn_SplitParams.sql" />
     <Content Include="sql\usp_GetFuncsInRole.sql" />
     <Content Include="sql\usp_GetRolesForUser.sql" />
     <Content Include="sql\usp_GetUsersInRole.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

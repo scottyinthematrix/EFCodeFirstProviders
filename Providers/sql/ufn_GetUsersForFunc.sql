@@ -1,18 +1,16 @@
-create function ufn_GetRolesForFunc
+create function ufn_GetUsersForFunc
 (
-	@funcName nvarchar(200),	-- currently comma-separated nams not supported
+	@funcName nvarchar(200),
 	@appName nvarchar(50)
 )
-RETURNS @retRoles TABLE
+RETURNS @retUsers TABLE
 (
-	Id uniqueidentifier primary key not null,
-	Name nvarchar(100) not null,
-	[Description] nvarchar(500) null,
-	PId uniqueidentifier null
+	[Id] [uniqueidentifier] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[Email] [nvarchar](max) NULL
 )
 as
 begin
-	
 	declare @roleNames varchar(500) = ''
 	select @roleNames=@roleNames+r.Name+','
 	from Roles as r
@@ -24,9 +22,9 @@ begin
 		on f.ApplicationId=app.Id
 	where app.Name=@appName and f.Name=@funcName
 	
-	insert @retRoles
+	insert @retUsers
 	select *
-	from ufn_GetChildRoles(@roleNames, @appName)
+	from ufn_GetUsersInRole(@roleNames, @appName)	
 
 	return
 end
