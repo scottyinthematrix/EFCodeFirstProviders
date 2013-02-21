@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -20,5 +21,12 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
         public virtual ICollection<Role> Roles { get; set; }
         public virtual ICollection<User> Users { get; set; }
         public virtual ICollection<Function> Functions { get; set; }
+
+        public Application()
+        {
+            Roles = new Collection<Role>();
+            Users = new Collection<User>();
+            Functions = new Collection<Function>();
+        }
     }
 }

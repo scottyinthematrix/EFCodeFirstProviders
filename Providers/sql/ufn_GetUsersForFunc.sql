@@ -24,7 +24,7 @@ begin
 	
 	insert @retUsers
 	select *
-	from ufn_GetUsersInRole(@roleNames, @appName)	
+	from ufn_GetUsersInRole(@roleNames, @appName, '')	
 
 	return
 end

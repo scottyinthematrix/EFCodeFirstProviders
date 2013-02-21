@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using ScottyApps.Utilities.DbContextExtensions;
 
@@ -21,5 +22,12 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
         public virtual ICollection<User> Users { get; set; }
 
         public virtual ICollection<Function> Functions { get; set; }
+
+        public Role()
+        {
+            Children = new Collection<Role>();
+            Users = new Collection<User>();
+            Functions = new Collection<Function>();
+        }
     }
 }

@@ -41,10 +41,12 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -60,6 +62,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="DomainTest.cs" />
+    <Compile Include="EFRoleProviderTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +73,10 @@
     <ProjectReference Include="..\Entities\Entities.csproj">
       <Project>{a4e211c5-c4b7-4aa2-a584-af1cc999a692}</Project>
       <Name>Entities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Providers\Providers.csproj">
+      <Project>{608274C4-E451-4CAC-98B2-07C18BB77790}</Project>
+      <Name>Providers</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

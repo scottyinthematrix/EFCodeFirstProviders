@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Configuration.Provider;
+using System.Data.Entity.Infrastructure;
+using System.Data.Objects;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -29,7 +31,8 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
     public class EFRoleProvider : RoleProvider
     {
-        private string ConnectionString { get; set; }
+        // TODO shift back to private
+        public string ConnectionString { get; set; }
 
         #region override methods
 
@@ -80,6 +83,20 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
 
             return roles.Any(r => r.ToLower() == roleName.ToLower());
+        }
+
+        public List<Role> GetRoles(string username)
+        {
+            using (var ctx = CreateContext())
+            {
+                ObjectParameter paraUserName = new ObjectParameter("userName", username);
+                ObjectParameter paraAppName = new ObjectParameter("appName", ApplicationName);
+                var roles = (ctx as IObjectContextAdapter).ObjectContext.ExecuteStoreQuery<Role>(
+                    "ufn_GetRolesForUser", username, ApplicationName).ToList();
+                    //ctx.Database.SqlQuery<Role>("exec dbo.ufn_GetRolesForUser @userName='{0}', @appName='{1}'",
+                    //                              username, ApplicationName).ToList();
+                return roles;
+            }
         }
 
         public override string[] GetRolesForUser(string username)
