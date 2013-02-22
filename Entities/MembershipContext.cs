@@ -111,11 +111,11 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
 
             #region User
 
-            var user = new User
+            var userScotty = new User
                            {
                                Id = new Guid("9BAD70A5-5BE4-4578-8A4F-CF14589D2386"),
                                Name = "scotty",
-                               //Application = app,
+                               Application = app,
                                Comment = "this is scotty and also the administrator",
                                IsAnonymous = false,
                                IsConfirmed = true,
@@ -126,7 +126,25 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
                                Email = "scotty.cn@gmail.com",
                                LastActiveDate = DateTime.Parse("2012-11-27 10:24:00.000")
                            };
-            user.MarkAsAdded();
+            userScotty.MarkAsAdded();
+
+            var userJuicy = new User
+                           {
+                               Id = new Guid("56FED227-CB6A-40E4-8095-1B7866A4592F"),
+                               Name = "juicy",
+                               Application = app,
+                               Comment = "this is juicy but NOT the administrator",
+                               IsAnonymous = false,
+                               IsConfirmed = true,
+                               IsLockedOut = false,
+                               Password = "good160",
+                               PasswordQuestion = "who am i",
+                               PasswordAnswer = "juicy",
+                               Email = "juicy.sunny@gmail.com",
+                               LastActiveDate = DateTime.Parse("2012-11-27 10:24:00.000")
+                           };
+            userJuicy.MarkAsAdded();
+
 
             #endregion
 
@@ -202,8 +220,11 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
 
             #endregion
 
-            user.Roles.Add(roleITMgrSH);
-            user.Roles.Add(roleMarketMgr);
+            userScotty.Roles.Add(roleITMgrSH);
+            userScotty.Roles.Add(roleMarketMgr);
+
+            userJuicy.Roles.Add(roleMarketMgrWH);
+            userJuicy.Roles.Add(roleITMgr);
 
             #region Function
 
@@ -246,7 +267,8 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
             roleITMgrSH.Functions.Add(fnMgmtSalesRpt);
             rolePassenger.Functions.Add(fnReadAnyPg);
 
-            app.Users.Add(user);
+            app.Users.Add(userScotty);
+            app.Users.Add(userJuicy);
             
             app.Roles.Add(roleITMgr);
             app.Roles.Add(roleMarketMgr);
@@ -254,8 +276,9 @@ namespace ScottyApps.EFCodeFirstProviders.Entities
             app.Functions.Add(fnMgmtSalesRpt);
             app.Functions.Add(fnReadAnyPg);
 
-            // TODO use DbContextExtensions to save changes in a single batch!!!
             context.SaveChanges(app);
+
+            // TODO execute other scripts to create functions and stored procedures
         }
     }
 }

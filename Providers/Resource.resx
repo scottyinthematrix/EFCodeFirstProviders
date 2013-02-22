@@ -144,6 +144,9 @@
   <data name="msg_RoleNameDuplication" xml:space="preserve">
     <value>Role name duplicates with existings.</value>
   </data>
+  <data name="msg_RoleNotExist" xml:space="preserve">
+    <value>Role with Name {0} does NOT exist.</value>
+  </data>
   <data name="msg_UserLockedOut" xml:space="preserve">
     <value>User {0} is locked out.</value>
   </data>

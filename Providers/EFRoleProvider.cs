@@ -89,28 +89,28 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             using (var ctx = CreateContext())
             {
-                ObjectParameter paraUserName = new ObjectParameter("userName", username);
-                ObjectParameter paraAppName = new ObjectParameter("appName", ApplicationName);
-                var roles = (ctx as IObjectContextAdapter).ObjectContext.ExecuteStoreQuery<Role>(
-                    "ufn_GetRolesForUser", username, ApplicationName).ToList();
-                    //ctx.Database.SqlQuery<Role>("exec dbo.ufn_GetRolesForUser @userName='{0}', @appName='{1}'",
-                    //                              username, ApplicationName).ToList();
+                var roles = ctx.Roles.SqlQuery("exec dbo.usp_GetRolesForUser @p0, @p1",
+                                                  username, ApplicationName).ToList();
                 return roles;
             }
         }
 
         public override string[] GetRolesForUser(string username)
         {
-            using (var ctx = CreateContext())
+            var roles = GetRoles(username);
+            if (roles == null || roles.Count == 0)
             {
-                var roleNames =
-                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetRolesForUser @userName='{0}', @appName='{1}'",
-                                                  username, ApplicationName).ToList();
-                return roleNames.ToArray();
+                return null;
             }
+
+            return roles.Select(r => r.Name).ToArray();
         }
 
         public override void CreateRole(string roleName)
+        {
+            CreateRole(roleName, string.Empty);
+        }
+        public void CreateRole(string roleName, string parentRoleName, string description = "")
         {
             if (string.IsNullOrEmpty(roleName))
             {
@@ -124,42 +124,41 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                     throw new ProviderException(Resource.msg_RoleNameDuplication);
                 }
 
-                var app = ProviderUtils.EnsureApplication(ApplicationName, ctx);
+                Role pRole = null;
+                if (!string.IsNullOrEmpty(parentRoleName))
+                {
+                    pRole = GetRole(MatchName(parentRoleName), ctx);
+                    if (pRole == null)
+                    {
+                        throw new ProviderException(Resource.msg_RoleNotExist);
+                    }
+                }
+
                 var role = new Role
-                               {
-                                   Id = Guid.NewGuid(),
-                                   Name = roleName,
-                                   Application = app
-                               };
-                ctx.Roles.Add(role);
-                ctx.SaveChanges();
+                           {
+                               Id = Guid.NewGuid(),
+                               Application = ProviderUtils.EnsureApplication(ApplicationName, ctx),
+                               Name = roleName,
+                               Description = string.IsNullOrEmpty(description) ? roleName : description,
+                               Parent = pRole
+                           };
+                role.MarkAsAdded();
+                ctx.SaveChanges(role);
             }
-        }
-        // TODO add a child role
-        public void CreateRole(string roleName, string parentRoleName)
-        {
-            
         }
 
         public override bool DeleteRole(string roleName, bool throwOnPopulatedRole)
         {
             using (var ctx = CreateContext())
             {
-                var role = GetRole(r => r.Name.ToLower() == roleName, ctx);
-                if (role == null)
-                {
-                    return false;
-                }
-
-                ctx.Roles.Remove(role);
-                ctx.SaveChanges();
+                var rowsAffected = ctx.Roles.Delete(r => r.Name.ToLower() == roleName);
+                return rowsAffected > 0;
             }
 
             // NOTE
             // if roles get deleted, corresponding records in usersinroles will be deleted at the same time
             // (this is an automatic and default behavior of code first model builder)
             // which means, parameter throwOnPopulatedRole is never used
-            return true;
         }
 
         public override bool RoleExists(string roleName)
@@ -177,6 +176,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             return exist;
         }
 
+        // TODO need test method?
         public override void AddUsersToRoles(string[] usernames, string[] roleNames)
         {
             if (usernames == null || usernames.Length == 0
@@ -212,6 +212,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
         }
 
+        // TODO need test method?
         public override void RemoveUsersFromRoles(string[] usernames, string[] roleNames)
         {
             if (usernames == null || usernames.Length == 0
@@ -247,44 +248,57 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                 ctx.SaveChanges();
             }
         }
-
-        public override string[] GetUsersInRole(string roleName)
+        public List<User> GetUsers(string roleName, string userName = "")
         {
             using (var ctx = CreateContext())
             {
-                var userNames =
-                    ctx.Database.SqlQuery<string>("exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}'",
-                                                  roleName, ApplicationName)
+                var users =
+                    ctx.Users.SqlQuery("exec dbo.usp_GetUsersInRole @p0, @p1, @p2",
+                                                  roleName, ApplicationName, userName)
                        .ToList();
-                return userNames.ToArray();
+                return users;
             }
+        }
+        public override string[] GetUsersInRole(string roleName)
+        {
+            var users = GetUsers(roleName);
+            if (users == null || users.Count == 0)
+            {
+                return null;
+            }
+
+            return users.Select(u => u.Name).ToArray();
         }
 
         public override string[] GetAllRoles()
         {
+            var roles = GetRoles();
+            if (roles == null || roles.Count == 0)
+            {
+                return null;
+            }
+
+            return roles.Select(r => r.Name).ToArray();
+        }
+        
+        public List<Role> GetRoles()
+        {
             using (var ctx = CreateContext())
             {
-                var roleNames = ctx.Roles.Where(MatchApplication()).Select(r => r.Name).ToArray();
-                return roleNames;
+                var roles = ctx.Roles.Include("Children").Include("Parent").Where(MatchApplication()).ToList();
+                return roles;
             }
-        }
-        // TODO return roles in JSON
-        public IEnumerable<Role> GetRoles()
-        {
-            throw new NotImplementedException("");
         }
 
         public override string[] FindUsersInRole(string roleName, string usernameToMatch)
         {
-            using (var ctx = CreateContext())
+            var users = GetUsers(roleName, usernameToMatch);
+            if (users == null || users.Count > 0)
             {
-                var userNames =
-                    ctx.Database.SqlQuery<string>(
-                        "exec dbo.usp_GetUsersInRole @roleName='{0}', @appName='{1}', @userName='{2}'", roleName,
-                        ApplicationName, usernameToMatch)
-                       .ToList();
-                return userNames.ToArray();
+                return null;
             }
+
+            return users.Select(u => u.Name).ToArray();
         }
 
         public override string ApplicationName { get; set; }
@@ -310,7 +324,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         private Role GetRole(Expression<Func<Role, bool>> predicate, MembershipContext ctx)
         {
-            return ctx.Roles.Where(MatchApplication()).Where(predicate).Single();
+            return ctx.Roles.SingleOrDefault(MatchApplication().And(predicate).ToExpressionFunc());
         }
 
         private bool RoleExists(string roleName, MembershipContext ctx)

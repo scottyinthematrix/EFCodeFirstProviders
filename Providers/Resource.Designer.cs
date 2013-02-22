@@ -142,6 +142,15 @@ namespace ScottyApps.EFCodeFirstProviders.Providers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Role with Name {0} does NOT exist..
+        /// </summary>
+        internal static string msg_RoleNotExist {
+            get {
+                return ResourceManager.GetString("msg_RoleNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User {0} is locked out..
         /// </summary>
         internal static string msg_UserLockedOut {
