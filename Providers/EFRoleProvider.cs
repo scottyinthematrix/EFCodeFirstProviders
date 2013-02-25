@@ -151,7 +151,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         {
             using (var ctx = CreateContext())
             {
-                var rowsAffected = ctx.Roles.Delete(r => r.Name.ToLower() == roleName);
+                var rowsAffected = ctx.Roles.Delete(MatchName(roleName));
                 return rowsAffected > 0;
             }
 
@@ -314,7 +314,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
 
         private Expression<Func<Role, bool>> MatchApplication()
         {
-            return r => r.Application.Name == ApplicationName;
+            return r => r.Application.Name.ToLower() == ApplicationName.ToLower();
         }
 
         private Expression<Func<Role, bool>> MatchName(string roleName)

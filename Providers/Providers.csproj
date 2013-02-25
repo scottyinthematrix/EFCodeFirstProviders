@@ -94,7 +94,9 @@
     <Content Include="sql\ufn_GetUsersForFunc.sql" />
     <Content Include="sql\ufn_GetUsersInRole.sql" />
     <Content Include="sql\ufn_SplitParams.sql" />
+    <Content Include="sql\usp_GetFuncsForUser.sql" />
     <Content Include="sql\usp_GetFuncsInRole.sql" />
+    <Content Include="sql\usp_GetRolesForFunc.sql" />
     <Content Include="sql\usp_GetRolesForUser.sql" />
     <Content Include="sql\usp_GetUsersInRole.sql" />
   </ItemGroup>

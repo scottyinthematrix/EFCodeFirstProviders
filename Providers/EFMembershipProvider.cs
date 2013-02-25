@@ -49,7 +49,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             get { return _passwordAttemptWindow; }
         }
 
-        private MembershipPasswordFormat _passwordFormat;
+        private MembershipPasswordFormat _passwordFormat = MembershipPasswordFormat.Clear;
         public override MembershipPasswordFormat PasswordFormat
         {
             get { return _passwordFormat; }
@@ -90,7 +90,16 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
         #endregion
 
         #region override methods
-
+        // TODO for test only - remove on production environments
+        public void Initialize()
+        {
+            _passwordFormat = MembershipPasswordFormat.Clear;
+            _minRequiredPasswordLength = 7;
+            _minRequiredNonAlphanumericCharacters = 1;
+            _requiresQuestionAndAnswer = true;
+            _requiresUniqueEmail = true;
+            _enablePasswordRetrieval = true;
+        }
         public override void Initialize(string name, System.Collections.Specialized.NameValueCollection config)
         {
             // Initialize values from web.config.
@@ -625,8 +634,10 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             }
             return decrypted;
         }
-        private bool CheckPwdComplexity(string clearText)
+        // TODO revert to private after test
+        public bool CheckPwdComplexity(string clearText)
         {
+            // TODO PasswordStrengthRegularExpression should also be involved
             return (
                        !string.IsNullOrEmpty(clearText)
                        && clearText.Length >= MinRequiredPasswordLength
@@ -665,6 +676,16 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
                                       user.LastPasswordChangedDate.GetValueOrDefault(),
                                       user.LastLockoutDate.GetValueOrDefault());
         }
+        /// <summary>
+        /// validate the user and password
+        /// throw exceptions for NotExist/NotConfirmed/LockedOut user;
+        /// if wrong password is given, increase the FaildPasswordAttempCount, if this exceeds the MaxInvalidPasswordAttemps, throw exception;
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="ctx"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
         private bool ValidateUser(string username, string password, MembershipContext ctx, out User user)
         {
             user = GetUser(u => u.Name.ToLower() == username.ToLower(), ctx);
@@ -676,7 +697,7 @@ namespace ScottyApps.EFCodeFirstProviders.Providers
             {
                 throw new EFMemberException(EFMembershipValidationStatus.UserNotConfirmed, string.Format(Resource.msg_UserNotConfirmed, username));
             }
-            if (!user.IsLockedOut)
+            if (user.IsLockedOut)
             {
                 throw new EFMemberException(EFMembershipValidationStatus.UserIsLockedOut, string.Format(Resource.msg_UserLockedOut, username));
             }

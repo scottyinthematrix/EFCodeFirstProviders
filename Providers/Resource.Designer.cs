@@ -115,6 +115,24 @@ namespace ScottyApps.EFCodeFirstProviders.Providers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Function Name duplicate with existings..
+        /// </summary>
+        internal static string msg_FuncNameDuplication {
+            get {
+                return ResourceManager.GetString("msg_FuncNameDuplication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Function with Name {0} does NOT exist..
+        /// </summary>
+        internal static string msg_FuncNotExist {
+            get {
+                return ResourceManager.GetString("msg_FuncNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password reset NOT enabled..
         /// </summary>
         internal static string msg_PwdResetNotEnabled {

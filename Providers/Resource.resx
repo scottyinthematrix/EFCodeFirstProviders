@@ -135,6 +135,12 @@
   <data name="msg_EmailDuplication" xml:space="preserve">
     <value>Email duplicates with existings.</value>
   </data>
+  <data name="msg_FuncNameDuplication" xml:space="preserve">
+    <value>Function Name duplicate with existings.</value>
+  </data>
+  <data name="msg_FuncNotExist" xml:space="preserve">
+    <value>Function with Name {0} does NOT exist.</value>
+  </data>
   <data name="msg_PwdResetNotEnabled" xml:space="preserve">
     <value>Password reset NOT enabled.</value>
   </data>

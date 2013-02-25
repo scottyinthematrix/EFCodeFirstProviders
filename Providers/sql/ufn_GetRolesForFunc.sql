@@ -1,6 +1,6 @@
 create function ufn_GetRolesForFunc
 (
-	@funcName nvarchar(200),	-- currently comma-separated nams not supported
+	@funcName nvarchar(200),	-- currently comma-separated names not supported
 	@appName nvarchar(50)
 )
 RETURNS @retRoles TABLE
@@ -8,7 +8,8 @@ RETURNS @retRoles TABLE
 	Id uniqueidentifier primary key not null,
 	Name nvarchar(100) not null,
 	[Description] nvarchar(500) null,
-	PId uniqueidentifier null
+	PId uniqueidentifier null,
+	[ApplicationId] [uniqueidentifier] NOT NULL
 )
 as
 begin
@@ -20,7 +21,7 @@ begin
 		on ur.RoleId=r.Id
 	inner join Functions as f
 		on ur.FunctionId=f.Id
-	inner join Application as app
+	inner join Applications as app
 		on f.ApplicationId=app.Id
 	where app.Name=@appName and f.Name=@funcName
 	

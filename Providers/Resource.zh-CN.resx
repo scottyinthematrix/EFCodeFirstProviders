@@ -135,6 +135,12 @@
   <data name="msg_EmailDuplication" xml:space="preserve">
     <value>Email与已有用户的重复。</value>
   </data>
+  <data name="msg_FuncNameDuplication" xml:space="preserve">
+    <value>功能名誉现有的重复。</value>
+  </data>
+  <data name="msg_FuncNotExist" xml:space="preserve">
+    <value>名为 {0} 的功能不存在。</value>
+  </data>
   <data name="msg_PwdResetNotEnabled" xml:space="preserve">
     <value>密码重设未被启用。</value>
   </data>
